@@ -30,7 +30,7 @@ export async function generateVariables(tokens: DesignTokens): Promise<void> {
  * Get existing collection or create new one
  */
 async function getOrCreateCollection(name: string): Promise<VariableCollection> {
-  const collections = figma.variables.getLocalVariableCollections();
+  const collections = await figma.variables.getLocalVariableCollectionsAsync();
   const existing = collections.find((c) => c.name === name);
 
   if (existing) {
@@ -43,18 +43,16 @@ async function getOrCreateCollection(name: string): Promise<VariableCollection> 
 /**
  * Get or create variable
  */
-function getOrCreateVariable(
+async function getOrCreateVariable(
   collection: VariableCollection,
   name: string,
   type: VariableResolvedDataType
-): Variable {
-  const existingId = collection.variableIds.find((id) => {
-    const variable = figma.variables.getVariableById(id);
-    return variable?.name === name;
-  });
-
-  if (existingId) {
-    return figma.variables.getVariableById(existingId)!;
+): Promise<Variable> {
+  for (const id of collection.variableIds) {
+    const variable = await figma.variables.getVariableByIdAsync(id);
+    if (variable?.name === name) {
+      return variable;
+    }
   }
 
   return figma.variables.createVariable(name, collection, type);
@@ -80,7 +78,7 @@ async function generateColorVariables(
 
   // Semantic colors
   for (const [name, value] of Object.entries(colors.semantic)) {
-    const variable = getOrCreateVariable(collection, `semantic/${name}`, 'COLOR');
+    const variable = await getOrCreateVariable(collection, `semantic/${name}`, 'COLOR');
     variable.setValueForMode(modeId, hexToRgba(value));
   }
 
@@ -89,19 +87,19 @@ async function generateColorVariables(
 
   // Background colors
   for (const [name, value] of Object.entries(colors.background)) {
-    const variable = getOrCreateVariable(collection, `background/${name}`, 'COLOR');
+    const variable = await getOrCreateVariable(collection, `background/${name}`, 'COLOR');
     variable.setValueForMode(modeId, hexToRgba(value));
   }
 
   // Text colors
   for (const [name, value] of Object.entries(colors.text)) {
-    const variable = getOrCreateVariable(collection, `text/${name}`, 'COLOR');
+    const variable = await getOrCreateVariable(collection, `text/${name}`, 'COLOR');
     variable.setValueForMode(modeId, hexToRgba(value));
   }
 
   // Border colors
   for (const [name, value] of Object.entries(colors.border)) {
-    const variable = getOrCreateVariable(collection, `border/${name}`, 'COLOR');
+    const variable = await getOrCreateVariable(collection, `border/${name}`, 'COLOR');
     variable.setValueForMode(modeId, hexToRgba(value));
   }
 }
@@ -116,7 +114,7 @@ async function generateColorScale(
   scale: ColorScale
 ): Promise<void> {
   for (const [shade, value] of Object.entries(scale)) {
-    const variable = getOrCreateVariable(collection, `${prefix}/${shade}`, 'COLOR');
+    const variable = await getOrCreateVariable(collection, `${prefix}/${shade}`, 'COLOR');
     variable.setValueForMode(modeId, hexToRgba(value));
   }
 }
@@ -131,7 +129,7 @@ async function generateNeutralScale(
   scale: NeutralScale
 ): Promise<void> {
   for (const [shade, value] of Object.entries(scale)) {
-    const variable = getOrCreateVariable(collection, `${prefix}/${shade}`, 'COLOR');
+    const variable = await getOrCreateVariable(collection, `${prefix}/${shade}`, 'COLOR');
     variable.setValueForMode(modeId, hexToRgba(value));
   }
 }
@@ -146,27 +144,27 @@ async function generateSpacingVariables(
   const modeId = collection.modes[0].modeId;
 
   // Base unit
-  const baseVar = getOrCreateVariable(collection, 'base-unit', 'FLOAT');
+  const baseVar = await getOrCreateVariable(collection, 'base-unit', 'FLOAT');
   baseVar.setValueForMode(modeId, spacing.baseUnit);
 
   // Scale
   for (const [key, value] of Object.entries(spacing.scale)) {
     const numValue = parseSpacingValue(value);
-    const variable = getOrCreateVariable(collection, `scale/${key}`, 'FLOAT');
+    const variable = await getOrCreateVariable(collection, `scale/${key}`, 'FLOAT');
     variable.setValueForMode(modeId, numValue);
   }
 
   // Section spacing
   for (const [key, value] of Object.entries(spacing.section)) {
     const numValue = parseSpacingValue(value);
-    const variable = getOrCreateVariable(collection, `section/${key}`, 'FLOAT');
+    const variable = await getOrCreateVariable(collection, `section/${key}`, 'FLOAT');
     variable.setValueForMode(modeId, numValue);
   }
 
   // Component spacing
   for (const [key, value] of Object.entries(spacing.component)) {
     const numValue = parseSpacingValue(value);
-    const variable = getOrCreateVariable(collection, `component/${key}`, 'FLOAT');
+    const variable = await getOrCreateVariable(collection, `component/${key}`, 'FLOAT');
     variable.setValueForMode(modeId, numValue);
   }
 }
@@ -183,7 +181,7 @@ async function generateEffectVariables(
   // Border radius
   for (const [key, value] of Object.entries(effects.borderRadius)) {
     const numValue = parseSpacingValue(value);
-    const variable = getOrCreateVariable(collection, `radius/${key}`, 'FLOAT');
+    const variable = await getOrCreateVariable(collection, `radius/${key}`, 'FLOAT');
     variable.setValueForMode(modeId, numValue);
   }
 }
