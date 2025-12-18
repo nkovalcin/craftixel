@@ -6,7 +6,6 @@
 import type { DesignTokens } from '../types';
 import { createSolidPaint } from '../utils/colors';
 import { createText, parseSize } from '../utils/typography';
-import { createComponent, parseShadows, appendWithLayout } from '../utils/layout';
 
 /**
  * Generate all atom components
@@ -33,27 +32,10 @@ export async function generateAtoms(tokens: DesignTokens): Promise<void> {
  */
 async function generateButtonComponents(tokens: DesignTokens): Promise<void> {
   const variants: Array<{ name: string; bg: string; text: string; border?: string }> = [
-    {
-      name: 'primary',
-      bg: tokens.colors.primary[500],
-      text: tokens.colors.text.inverse,
-    },
-    {
-      name: 'secondary',
-      bg: tokens.colors.neutral[100],
-      text: tokens.colors.text.primary,
-    },
-    {
-      name: 'ghost',
-      bg: 'transparent',
-      text: tokens.colors.primary[500],
-    },
-    {
-      name: 'outline',
-      bg: 'transparent',
-      text: tokens.colors.primary[500],
-      border: tokens.colors.primary[500],
-    },
+    { name: 'primary', bg: tokens.colors.primary[500], text: tokens.colors.text.inverse },
+    { name: 'secondary', bg: tokens.colors.neutral[100], text: tokens.colors.text.primary },
+    { name: 'ghost', bg: 'transparent', text: tokens.colors.primary[500] },
+    { name: 'outline', bg: 'transparent', text: tokens.colors.primary[500], border: tokens.colors.primary[500] },
   ];
 
   const sizes: Array<{ name: string; px: number; py: number; fontSize: number }> = [
@@ -66,19 +48,33 @@ async function generateButtonComponents(tokens: DesignTokens): Promise<void> {
 
   for (const variant of variants) {
     for (const size of sizes) {
-      const button = createComponent(`Button/${variant.name}/${size.name}`, {
-        direction: 'HORIZONTAL',
-        primaryAlign: 'CENTER',
-        counterAlign: 'CENTER',
-        padding: { top: size.py, right: size.px, bottom: size.py, left: size.px },
-        itemSpacing: 8,
-        cornerRadius: parseSize(tokens.effects.borderRadius.lg),
-        fills: variant.bg === 'transparent' ? [] : [createSolidPaint(variant.bg)],
-        strokes: variant.border ? [createSolidPaint(variant.border)] : [],
-        strokeWeight: variant.border ? 1 : 0,
-        width: 'HUG',
-        height: 'HUG',
-      });
+      // Create component
+      const button = figma.createComponent();
+      button.name = `Button/${variant.name}/${size.name}`;
+
+      // Setup auto-layout
+      button.layoutMode = 'HORIZONTAL';
+      button.primaryAxisAlignItems = 'CENTER';
+      button.counterAxisAlignItems = 'CENTER';
+      button.paddingTop = size.py;
+      button.paddingRight = size.px;
+      button.paddingBottom = size.py;
+      button.paddingLeft = size.px;
+      button.itemSpacing = 8;
+      button.cornerRadius = parseSize(tokens.effects.borderRadius.lg);
+
+      // Fills
+      if (variant.bg !== 'transparent') {
+        button.fills = [createSolidPaint(variant.bg)];
+      } else {
+        button.fills = [];
+      }
+
+      // Strokes
+      if (variant.border) {
+        button.strokes = [createSolidPaint(variant.border)];
+        button.strokeWeight = 1;
+      }
 
       // Button text
       const text = await createText('Button', {
@@ -89,6 +85,11 @@ async function generateButtonComponents(tokens: DesignTokens): Promise<void> {
       });
 
       button.appendChild(text);
+
+      // Set sizing after children are added
+      button.layoutSizingHorizontal = 'HUG';
+      button.layoutSizingVertical = 'HUG';
+
       buttonComponents.push(button);
     }
   }
@@ -102,40 +103,49 @@ async function generateButtonComponents(tokens: DesignTokens): Promise<void> {
  */
 async function generateInputComponents(tokens: DesignTokens): Promise<void> {
   const states = ['default', 'focused', 'error', 'disabled'];
-
   const inputComponents: ComponentNode[] = [];
 
   for (const state of states) {
-    const input = createComponent(`Input/${state}`, {
-      direction: 'HORIZONTAL',
-      primaryAlign: 'MIN',
-      counterAlign: 'CENTER',
-      padding: { top: 10, right: 12, bottom: 10, left: 12 },
-      width: 280,
-      height: 'HUG',
-      cornerRadius: parseSize(tokens.effects.borderRadius.lg),
-      fills: [createSolidPaint(tokens.colors.background.primary)],
-      strokes: [
-        createSolidPaint(
-          state === 'focused'
-            ? tokens.colors.primary[500]
-            : state === 'error'
-              ? tokens.colors.semantic.error
-              : tokens.colors.border.medium
-        ),
-      ],
-      strokeWeight: state === 'focused' ? 2 : 1,
-    });
+    // Create component
+    const input = figma.createComponent();
+    input.name = `Input/${state}`;
+
+    // Setup auto-layout
+    input.layoutMode = 'HORIZONTAL';
+    input.primaryAxisAlignItems = 'MIN';
+    input.counterAxisAlignItems = 'CENTER';
+    input.paddingTop = 10;
+    input.paddingRight = 12;
+    input.paddingBottom = 10;
+    input.paddingLeft = 12;
+    input.cornerRadius = parseSize(tokens.effects.borderRadius.lg);
+    input.fills = [createSolidPaint(tokens.colors.background.primary)];
+
+    // Border color based on state
+    const borderColor =
+      state === 'focused'
+        ? tokens.colors.primary[500]
+        : state === 'error'
+          ? tokens.colors.semantic.error
+          : tokens.colors.border.medium;
+    input.strokes = [createSolidPaint(borderColor)];
+    input.strokeWeight = state === 'focused' ? 2 : 1;
 
     // Placeholder text
     const placeholder = await createText('Placeholder text', {
       fontFamily: tokens.typography.fontFamily.body,
       fontSize: parseSize(tokens.typography.fontSize.base.size),
-      fontWeight: tokens.typography.fontWeight.regular,
+      fontWeight: tokens.typography.fontWeight.normal,
       color: state === 'disabled' ? tokens.colors.text.muted : tokens.colors.text.secondary,
     });
 
-    appendWithLayout(input, placeholder, { horizontal: 'FILL' });
+    input.appendChild(placeholder);
+
+    // Set sizing AFTER appendChild
+    input.resize(280, input.height);
+    input.layoutSizingHorizontal = 'FIXED';
+    input.layoutSizingVertical = 'HUG';
+    placeholder.layoutSizingHorizontal = 'FILL';
 
     if (state === 'disabled') {
       input.opacity = 0.5;
@@ -144,7 +154,6 @@ async function generateInputComponents(tokens: DesignTokens): Promise<void> {
     inputComponents.push(input);
   }
 
-  // Arrange below buttons
   arrangeComponents(inputComponents, 300, 200);
 }
 
@@ -163,16 +172,20 @@ async function generateBadgeComponents(tokens: DesignTokens): Promise<void> {
   const badgeComponents: ComponentNode[] = [];
 
   for (const variant of variants) {
-    const badge = createComponent(`Badge/${variant.name}`, {
-      direction: 'HORIZONTAL',
-      primaryAlign: 'CENTER',
-      counterAlign: 'CENTER',
-      padding: { top: 4, right: 10, bottom: 4, left: 10 },
-      cornerRadius: parseSize(tokens.effects.borderRadius.full),
-      fills: [createSolidPaint(variant.bg)],
-      width: 'HUG',
-      height: 'HUG',
-    });
+    // Create component
+    const badge = figma.createComponent();
+    badge.name = `Badge/${variant.name}`;
+
+    // Setup auto-layout
+    badge.layoutMode = 'HORIZONTAL';
+    badge.primaryAxisAlignItems = 'CENTER';
+    badge.counterAxisAlignItems = 'CENTER';
+    badge.paddingTop = 4;
+    badge.paddingRight = 10;
+    badge.paddingBottom = 4;
+    badge.paddingLeft = 10;
+    badge.cornerRadius = 9999; // full rounded
+    badge.fills = [createSolidPaint(variant.bg)];
 
     const text = await createText('Badge', {
       fontFamily: tokens.typography.fontFamily.body,
@@ -182,10 +195,14 @@ async function generateBadgeComponents(tokens: DesignTokens): Promise<void> {
     });
 
     badge.appendChild(text);
+
+    // Set sizing after appendChild
+    badge.layoutSizingHorizontal = 'HUG';
+    badge.layoutSizingVertical = 'HUG';
+
     badgeComponents.push(badge);
   }
 
-  // Arrange
   arrangeComponents(badgeComponents, 120, 400);
 }
 

@@ -6,7 +6,6 @@
 import type { DesignTokens, ContentTokens } from '../types';
 import { createSolidPaint } from '../utils/colors';
 import { createText, parseSize } from '../utils/typography';
-import { createAutoLayoutFrame, appendWithLayout } from '../utils/layout';
 
 /**
  * Generate complete pages
@@ -30,6 +29,17 @@ export async function generatePages(
 }
 
 /**
+ * Create auto-layout frame helper
+ */
+function createAutoFrame(name: string, direction: 'HORIZONTAL' | 'VERTICAL' = 'VERTICAL'): FrameNode {
+  const frame = figma.createFrame();
+  frame.name = name;
+  frame.layoutMode = direction;
+  frame.fills = [];
+  return frame;
+}
+
+/**
  * Generate complete landing page
  */
 async function generateLandingPage(
@@ -37,12 +47,9 @@ async function generateLandingPage(
   content: ContentTokens,
   projectName: string
 ): Promise<void> {
-  const page = createAutoLayoutFrame(`${projectName} - Landing Page`, {
-    direction: 'VERTICAL',
-    width: 1440,
-    height: 'HUG',
-    fills: [createSolidPaint(tokens.colors.background.primary)],
-  });
+  const page = createAutoFrame(`${projectName} - Landing Page`);
+  page.resize(1440, page.height);
+  page.fills = [createSolidPaint(tokens.colors.background.primary)];
 
   // Header
   const header = await createHeader(tokens, content);
@@ -59,9 +66,8 @@ async function generateLandingPage(
       case 'features':
         sectionFrame = await createFeaturesSection(tokens, section);
         break;
-      case 'problem':
-      case 'solution':
-        sectionFrame = await createTextSection(tokens, section);
+      case 'howItWorks':
+        sectionFrame = await createHowItWorksSection(tokens, section);
         break;
       case 'cta':
         sectionFrame = await createCTASection(tokens, section);
@@ -72,12 +78,22 @@ async function generateLandingPage(
 
     if (sectionFrame) {
       page.appendChild(sectionFrame);
+      sectionFrame.layoutSizingHorizontal = 'FILL';
+      sectionFrame.layoutSizingVertical = 'HUG';
     }
   }
 
   // Footer
   const footer = await createFooter(tokens, content);
   page.appendChild(footer);
+
+  // Set page sizing
+  page.layoutSizingHorizontal = 'FIXED';
+  page.layoutSizingVertical = 'HUG';
+  header.layoutSizingHorizontal = 'FILL';
+  header.layoutSizingVertical = 'HUG';
+  footer.layoutSizingHorizontal = 'FILL';
+  footer.layoutSizingVertical = 'HUG';
 
   page.x = 0;
   page.y = 0;
@@ -90,17 +106,16 @@ async function createHeader(
   tokens: DesignTokens,
   content: ContentTokens
 ): Promise<FrameNode> {
-  const header = createAutoLayoutFrame('Header', {
-    direction: 'HORIZONTAL',
-    primaryAlign: 'SPACE_BETWEEN',
-    counterAlign: 'CENTER',
-    padding: { top: 16, right: 64, bottom: 16, left: 64 },
-    width: 'FILL',
-    height: 'HUG',
-    fills: [createSolidPaint(tokens.colors.background.primary)],
-    strokes: [createSolidPaint(tokens.colors.border.light)],
-    strokeWeight: 1,
-  });
+  const header = createAutoFrame('Header', 'HORIZONTAL');
+  header.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  header.counterAxisAlignItems = 'CENTER';
+  header.paddingTop = 16;
+  header.paddingRight = 64;
+  header.paddingBottom = 16;
+  header.paddingLeft = 64;
+  header.fills = [createSolidPaint(tokens.colors.background.primary)];
+  header.strokes = [createSolidPaint(tokens.colors.border.light)];
+  header.strokeWeight = 1;
 
   // Logo
   const logo = await createText(content.brand.name, {
@@ -111,12 +126,8 @@ async function createHeader(
   });
 
   // Nav
-  const nav = createAutoLayoutFrame('Nav', {
-    direction: 'HORIZONTAL',
-    itemSpacing: 32,
-    width: 'HUG',
-    height: 'HUG',
-  });
+  const nav = createAutoFrame('Nav', 'HORIZONTAL');
+  nav.itemSpacing = 32;
 
   for (const item of ['Features', 'Pricing', 'About']) {
     const navText = await createText(item, {
@@ -129,16 +140,15 @@ async function createHeader(
   }
 
   // CTA
-  const ctaBtn = createAutoLayoutFrame('CTA', {
-    direction: 'HORIZONTAL',
-    primaryAlign: 'CENTER',
-    counterAlign: 'CENTER',
-    padding: { top: 8, right: 16, bottom: 8, left: 16 },
-    cornerRadius: parseSize(tokens.effects.borderRadius.lg),
-    fills: [createSolidPaint(tokens.colors.primary[500])],
-    width: 'HUG',
-    height: 'HUG',
-  });
+  const ctaBtn = createAutoFrame('CTA', 'HORIZONTAL');
+  ctaBtn.primaryAxisAlignItems = 'CENTER';
+  ctaBtn.counterAxisAlignItems = 'CENTER';
+  ctaBtn.paddingTop = 8;
+  ctaBtn.paddingRight = 16;
+  ctaBtn.paddingBottom = 8;
+  ctaBtn.paddingLeft = 16;
+  ctaBtn.cornerRadius = parseSize(tokens.effects.borderRadius.lg);
+  ctaBtn.fills = [createSolidPaint(tokens.colors.primary[500])];
 
   const ctaText = await createText(content.microcopy.buttons.getStarted || 'Get Started', {
     fontFamily: tokens.typography.fontFamily.body,
@@ -152,6 +162,12 @@ async function createHeader(
   header.appendChild(nav);
   header.appendChild(ctaBtn);
 
+  // Set sizing after appendChild
+  nav.layoutSizingHorizontal = 'HUG';
+  nav.layoutSizingVertical = 'HUG';
+  ctaBtn.layoutSizingHorizontal = 'HUG';
+  ctaBtn.layoutSizingVertical = 'HUG';
+
   return header;
 }
 
@@ -162,25 +178,21 @@ async function createHeroSection(
   tokens: DesignTokens,
   section: ContentTokens['sections'][0]
 ): Promise<FrameNode> {
-  const hero = createAutoLayoutFrame('Hero', {
-    direction: 'VERTICAL',
-    primaryAlign: 'CENTER',
-    counterAlign: 'CENTER',
-    padding: { top: 120, right: 64, bottom: 120, left: 64 },
-    itemSpacing: 24,
-    width: 'FILL',
-    height: 'HUG',
-  });
+  const hero = createAutoFrame('Hero');
+  hero.primaryAxisAlignItems = 'CENTER';
+  hero.counterAxisAlignItems = 'CENTER';
+  hero.paddingTop = 120;
+  hero.paddingRight = 64;
+  hero.paddingBottom = 120;
+  hero.paddingLeft = 64;
+  hero.itemSpacing = 24;
 
   // Content
-  const content = createAutoLayoutFrame('Content', {
-    direction: 'VERTICAL',
-    primaryAlign: 'CENTER',
-    counterAlign: 'CENTER',
-    itemSpacing: 24,
-    width: 800,
-    height: 'HUG',
-  });
+  const content = createAutoFrame('Content');
+  content.primaryAxisAlignItems = 'CENTER';
+  content.counterAxisAlignItems = 'CENTER';
+  content.itemSpacing = 24;
+  content.resize(800, content.height);
 
   // Headline
   const headline = await createText(section.headline, {
@@ -193,7 +205,7 @@ async function createHeroSection(
   });
   headline.textAutoResize = 'WIDTH_AND_HEIGHT';
 
-  appendWithLayout(content, headline, { horizontal: 'FILL' });
+  content.appendChild(headline);
 
   // Subheadline
   if (section.subheadline) {
@@ -205,29 +217,26 @@ async function createHeroSection(
       lineHeight: tokens.typography.fontSize.xl.lineHeight,
     });
     subheadline.textAutoResize = 'WIDTH_AND_HEIGHT';
-    appendWithLayout(content, subheadline, { horizontal: 'FILL' });
+    content.appendChild(subheadline);
+    subheadline.layoutSizingHorizontal = 'FILL';
   }
 
   // CTAs
   if (section.cta) {
-    const ctaContainer = createAutoLayoutFrame('CTAs', {
-      direction: 'HORIZONTAL',
-      primaryAlign: 'CENTER',
-      itemSpacing: 16,
-      width: 'HUG',
-      height: 'HUG',
-    });
+    const ctaContainer = createAutoFrame('CTAs', 'HORIZONTAL');
+    ctaContainer.primaryAxisAlignItems = 'CENTER';
+    ctaContainer.itemSpacing = 16;
 
-    const primaryBtn = createAutoLayoutFrame('Primary', {
-      direction: 'HORIZONTAL',
-      primaryAlign: 'CENTER',
-      counterAlign: 'CENTER',
-      padding: { top: 16, right: 32, bottom: 16, left: 32 },
-      cornerRadius: parseSize(tokens.effects.borderRadius.lg),
-      fills: [createSolidPaint(tokens.colors.primary[500])],
-      width: 'HUG',
-      height: 'HUG',
-    });
+    const primaryBtn = createAutoFrame('Primary', 'HORIZONTAL');
+    primaryBtn.primaryAxisAlignItems = 'CENTER';
+    primaryBtn.counterAxisAlignItems = 'CENTER';
+    primaryBtn.paddingTop = 16;
+    primaryBtn.paddingRight = 32;
+    primaryBtn.paddingBottom = 16;
+    primaryBtn.paddingLeft = 32;
+    primaryBtn.cornerRadius = parseSize(tokens.effects.borderRadius.lg);
+    primaryBtn.fills = [createSolidPaint(tokens.colors.primary[500])];
+
     const primaryText = await createText(section.cta.primary, {
       fontSize: 16,
       fontWeight: tokens.typography.fontWeight.semibold,
@@ -237,17 +246,17 @@ async function createHeroSection(
     ctaContainer.appendChild(primaryBtn);
 
     if (section.cta.secondary) {
-      const secondaryBtn = createAutoLayoutFrame('Secondary', {
-        direction: 'HORIZONTAL',
-        primaryAlign: 'CENTER',
-        counterAlign: 'CENTER',
-        padding: { top: 16, right: 32, bottom: 16, left: 32 },
-        cornerRadius: parseSize(tokens.effects.borderRadius.lg),
-        strokes: [createSolidPaint(tokens.colors.border.medium)],
-        strokeWeight: 1,
-        width: 'HUG',
-        height: 'HUG',
-      });
+      const secondaryBtn = createAutoFrame('Secondary', 'HORIZONTAL');
+      secondaryBtn.primaryAxisAlignItems = 'CENTER';
+      secondaryBtn.counterAxisAlignItems = 'CENTER';
+      secondaryBtn.paddingTop = 16;
+      secondaryBtn.paddingRight = 32;
+      secondaryBtn.paddingBottom = 16;
+      secondaryBtn.paddingLeft = 32;
+      secondaryBtn.cornerRadius = parseSize(tokens.effects.borderRadius.lg);
+      secondaryBtn.strokes = [createSolidPaint(tokens.colors.border.medium)];
+      secondaryBtn.strokeWeight = 1;
+
       const secondaryText = await createText(section.cta.secondary, {
         fontSize: 16,
         fontWeight: tokens.typography.fontWeight.medium,
@@ -255,12 +264,26 @@ async function createHeroSection(
       });
       secondaryBtn.appendChild(secondaryText);
       ctaContainer.appendChild(secondaryBtn);
+
+      secondaryBtn.layoutSizingHorizontal = 'HUG';
+      secondaryBtn.layoutSizingVertical = 'HUG';
     }
 
     content.appendChild(ctaContainer);
+
+    primaryBtn.layoutSizingHorizontal = 'HUG';
+    primaryBtn.layoutSizingVertical = 'HUG';
+    ctaContainer.layoutSizingHorizontal = 'HUG';
+    ctaContainer.layoutSizingVertical = 'HUG';
   }
 
   hero.appendChild(content);
+
+  // Set sizing after appendChild
+  content.layoutSizingHorizontal = 'FIXED';
+  content.layoutSizingVertical = 'HUG';
+  headline.layoutSizingHorizontal = 'FILL';
+
   return hero;
 }
 
@@ -271,26 +294,22 @@ async function createFeaturesSection(
   tokens: DesignTokens,
   section: ContentTokens['sections'][0]
 ): Promise<FrameNode> {
-  const features = createAutoLayoutFrame('Features', {
-    direction: 'VERTICAL',
-    primaryAlign: 'CENTER',
-    counterAlign: 'CENTER',
-    padding: { top: 96, right: 64, bottom: 96, left: 64 },
-    itemSpacing: 48,
-    width: 'FILL',
-    height: 'HUG',
-    fills: [createSolidPaint(tokens.colors.neutral[50])],
-  });
+  const features = createAutoFrame('Features');
+  features.primaryAxisAlignItems = 'CENTER';
+  features.counterAxisAlignItems = 'CENTER';
+  features.paddingTop = 96;
+  features.paddingRight = 64;
+  features.paddingBottom = 96;
+  features.paddingLeft = 64;
+  features.itemSpacing = 48;
+  features.fills = [createSolidPaint(tokens.colors.neutral[50])];
 
   // Header
-  const header = createAutoLayoutFrame('Header', {
-    direction: 'VERTICAL',
-    primaryAlign: 'CENTER',
-    counterAlign: 'CENTER',
-    itemSpacing: 12,
-    width: 600,
-    height: 'HUG',
-  });
+  const header = createAutoFrame('Header');
+  header.primaryAxisAlignItems = 'CENTER';
+  header.counterAxisAlignItems = 'CENTER';
+  header.itemSpacing = 12;
+  header.resize(600, header.height);
 
   const headline = await createText(section.headline, {
     fontFamily: tokens.typography.fontFamily.heading,
@@ -300,7 +319,7 @@ async function createFeaturesSection(
     textAlign: 'CENTER',
   });
   headline.textAutoResize = 'WIDTH_AND_HEIGHT';
-  appendWithLayout(header, headline, { horizontal: 'FILL' });
+  header.appendChild(headline);
 
   if (section.subheadline) {
     const subheadline = await createText(section.subheadline, {
@@ -310,42 +329,37 @@ async function createFeaturesSection(
       textAlign: 'CENTER',
     });
     subheadline.textAutoResize = 'WIDTH_AND_HEIGHT';
-    appendWithLayout(header, subheadline, { horizontal: 'FILL' });
+    header.appendChild(subheadline);
+    subheadline.layoutSizingHorizontal = 'FILL';
   }
 
   features.appendChild(header);
 
   // Grid
   if (section.items && section.items.length > 0) {
-    const grid = createAutoLayoutFrame('Grid', {
-      direction: 'HORIZONTAL',
-      primaryAlign: 'CENTER',
-      itemSpacing: 32,
-      width: 'HUG',
-      height: 'HUG',
-    });
+    const grid = createAutoFrame('Grid', 'HORIZONTAL');
+    grid.primaryAxisAlignItems = 'CENTER';
+    grid.itemSpacing = 32;
 
     for (const item of section.items.slice(0, 3)) {
-      const card = createAutoLayoutFrame(`Feature`, {
-        direction: 'VERTICAL',
-        itemSpacing: 12,
-        padding: 24,
-        width: 320,
-        height: 'HUG',
-        cornerRadius: parseSize(tokens.effects.borderRadius.xl),
-        fills: [createSolidPaint(tokens.colors.background.primary)],
-      });
+      const card = createAutoFrame('Feature');
+      card.itemSpacing = 12;
+      card.paddingTop = 24;
+      card.paddingRight = 24;
+      card.paddingBottom = 24;
+      card.paddingLeft = 24;
+      card.resize(320, card.height);
+      card.cornerRadius = parseSize(tokens.effects.borderRadius.xl);
+      card.fills = [createSolidPaint(tokens.colors.background.primary)];
 
       // Icon
-      const icon = createAutoLayoutFrame('Icon', {
-        direction: 'HORIZONTAL',
-        primaryAlign: 'CENTER',
-        counterAlign: 'CENTER',
-        width: 48,
-        height: 48,
-        cornerRadius: parseSize(tokens.effects.borderRadius.lg),
-        fills: [createSolidPaint(tokens.colors.primary[50])],
-      });
+      const icon = createAutoFrame('Icon', 'HORIZONTAL');
+      icon.primaryAxisAlignItems = 'CENTER';
+      icon.counterAxisAlignItems = 'CENTER';
+      icon.resize(48, 48);
+      icon.cornerRadius = parseSize(tokens.effects.borderRadius.lg);
+      icon.fills = [createSolidPaint(tokens.colors.primary[50])];
+
       const iconText = await createText('✦', {
         fontSize: 24,
         color: tokens.colors.primary[500],
@@ -367,42 +381,176 @@ async function createFeaturesSection(
       });
 
       card.appendChild(icon);
-      appendWithLayout(card, title, { horizontal: 'FILL' });
-      appendWithLayout(card, desc, { horizontal: 'FILL' });
+      card.appendChild(title);
+      card.appendChild(desc);
       grid.appendChild(card);
+
+      // Set sizing after appendChild
+      card.layoutSizingHorizontal = 'FIXED';
+      card.layoutSizingVertical = 'HUG';
+      icon.layoutSizingHorizontal = 'HUG';
+      icon.layoutSizingVertical = 'HUG';
+      title.layoutSizingHorizontal = 'FILL';
+      desc.layoutSizingHorizontal = 'FILL';
     }
 
     features.appendChild(grid);
+
+    grid.layoutSizingHorizontal = 'HUG';
+    grid.layoutSizingVertical = 'HUG';
   }
+
+  // Set sizing after appendChild
+  header.layoutSizingHorizontal = 'FIXED';
+  header.layoutSizingVertical = 'HUG';
+  headline.layoutSizingHorizontal = 'FILL';
 
   return features;
 }
 
 /**
- * Create Text Section (Problem/Solution/etc)
+ * Create How It Works Section
+ */
+async function createHowItWorksSection(
+  tokens: DesignTokens,
+  section: ContentTokens['sections'][0]
+): Promise<FrameNode> {
+  const howItWorks = createAutoFrame('HowItWorks');
+  howItWorks.primaryAxisAlignItems = 'CENTER';
+  howItWorks.counterAxisAlignItems = 'CENTER';
+  howItWorks.paddingTop = 96;
+  howItWorks.paddingRight = 64;
+  howItWorks.paddingBottom = 96;
+  howItWorks.paddingLeft = 64;
+  howItWorks.itemSpacing = 48;
+
+  // Header
+  const header = createAutoFrame('Header');
+  header.primaryAxisAlignItems = 'CENTER';
+  header.counterAxisAlignItems = 'CENTER';
+  header.itemSpacing = 12;
+  header.resize(600, header.height);
+
+  const headline = await createText(section.headline, {
+    fontFamily: tokens.typography.fontFamily.heading,
+    fontSize: parseSize(tokens.typography.fontSize['4xl'].size),
+    fontWeight: tokens.typography.fontWeight.bold,
+    color: tokens.colors.text.primary,
+    textAlign: 'CENTER',
+  });
+  headline.textAutoResize = 'WIDTH_AND_HEIGHT';
+  header.appendChild(headline);
+
+  if (section.subheadline) {
+    const subheadline = await createText(section.subheadline, {
+      fontFamily: tokens.typography.fontFamily.body,
+      fontSize: parseSize(tokens.typography.fontSize.lg.size),
+      color: tokens.colors.text.secondary,
+      textAlign: 'CENTER',
+    });
+    subheadline.textAutoResize = 'WIDTH_AND_HEIGHT';
+    header.appendChild(subheadline);
+    subheadline.layoutSizingHorizontal = 'FILL';
+  }
+
+  howItWorks.appendChild(header);
+
+  // Steps
+  if (section.items && section.items.length > 0) {
+    const steps = createAutoFrame('Steps', 'HORIZONTAL');
+    steps.primaryAxisAlignItems = 'MIN';
+    steps.itemSpacing = 48;
+
+    let stepNumber = 1;
+    for (const item of section.items.slice(0, 3)) {
+      const step = createAutoFrame('Step');
+      step.primaryAxisAlignItems = 'CENTER';
+      step.counterAxisAlignItems = 'CENTER';
+      step.itemSpacing = 16;
+      step.resize(280, step.height);
+
+      // Step number
+      const numberFrame = createAutoFrame('Number', 'HORIZONTAL');
+      numberFrame.primaryAxisAlignItems = 'CENTER';
+      numberFrame.counterAxisAlignItems = 'CENTER';
+      numberFrame.resize(48, 48);
+      numberFrame.cornerRadius = 24;
+      numberFrame.fills = [createSolidPaint(tokens.colors.primary[500])];
+
+      const numberText = await createText(String(stepNumber), {
+        fontSize: 20,
+        fontWeight: tokens.typography.fontWeight.bold,
+        color: tokens.colors.text.inverse,
+      });
+      numberFrame.appendChild(numberText);
+
+      const title = await createText(item.title, {
+        fontFamily: tokens.typography.fontFamily.heading,
+        fontSize: parseSize(tokens.typography.fontSize.lg.size),
+        fontWeight: tokens.typography.fontWeight.semibold,
+        color: tokens.colors.text.primary,
+        textAlign: 'CENTER',
+      });
+
+      const desc = await createText(item.description, {
+        fontFamily: tokens.typography.fontFamily.body,
+        fontSize: parseSize(tokens.typography.fontSize.base.size),
+        color: tokens.colors.text.secondary,
+        textAlign: 'CENTER',
+        lineHeight: 1.6,
+      });
+
+      step.appendChild(numberFrame);
+      step.appendChild(title);
+      step.appendChild(desc);
+      steps.appendChild(step);
+
+      // Set sizing after appendChild
+      step.layoutSizingHorizontal = 'FIXED';
+      step.layoutSizingVertical = 'HUG';
+      numberFrame.layoutSizingHorizontal = 'HUG';
+      numberFrame.layoutSizingVertical = 'HUG';
+      title.layoutSizingHorizontal = 'FILL';
+      desc.layoutSizingHorizontal = 'FILL';
+
+      stepNumber++;
+    }
+
+    howItWorks.appendChild(steps);
+
+    steps.layoutSizingHorizontal = 'HUG';
+    steps.layoutSizingVertical = 'HUG';
+  }
+
+  // Set sizing after appendChild
+  header.layoutSizingHorizontal = 'FIXED';
+  header.layoutSizingVertical = 'HUG';
+  headline.layoutSizingHorizontal = 'FILL';
+
+  return howItWorks;
+}
+
+/**
+ * Create Text Section
  */
 async function createTextSection(
   tokens: DesignTokens,
   section: ContentTokens['sections'][0]
 ): Promise<FrameNode> {
-  const textSection = createAutoLayoutFrame(section.type, {
-    direction: 'VERTICAL',
-    primaryAlign: 'CENTER',
-    counterAlign: 'CENTER',
-    padding: { top: 96, right: 64, bottom: 96, left: 64 },
-    itemSpacing: 24,
-    width: 'FILL',
-    height: 'HUG',
-  });
+  const textSection = createAutoFrame(section.type);
+  textSection.primaryAxisAlignItems = 'CENTER';
+  textSection.counterAxisAlignItems = 'CENTER';
+  textSection.paddingTop = 96;
+  textSection.paddingRight = 64;
+  textSection.paddingBottom = 96;
+  textSection.paddingLeft = 64;
+  textSection.itemSpacing = 24;
 
-  const content = createAutoLayoutFrame('Content', {
-    direction: 'VERTICAL',
-    primaryAlign: 'CENTER',
-    counterAlign: 'CENTER',
-    itemSpacing: 16,
-    width: 700,
-    height: 'HUG',
-  });
+  const content = createAutoFrame('Content');
+  content.primaryAxisAlignItems = 'CENTER';
+  content.counterAxisAlignItems = 'CENTER';
+  content.itemSpacing = 16;
+  content.resize(700, content.height);
 
   const headline = await createText(section.headline, {
     fontFamily: tokens.typography.fontFamily.heading,
@@ -413,7 +561,7 @@ async function createTextSection(
   });
   headline.textAutoResize = 'WIDTH_AND_HEIGHT';
 
-  appendWithLayout(content, headline, { horizontal: 'FILL' });
+  content.appendChild(headline);
 
   if (section.body) {
     const body = await createText(section.body, {
@@ -424,10 +572,17 @@ async function createTextSection(
       lineHeight: 1.7,
     });
     body.textAutoResize = 'WIDTH_AND_HEIGHT';
-    appendWithLayout(content, body, { horizontal: 'FILL' });
+    content.appendChild(body);
+    body.layoutSizingHorizontal = 'FILL';
   }
 
   textSection.appendChild(content);
+
+  // Set sizing after appendChild
+  content.layoutSizingHorizontal = 'FIXED';
+  content.layoutSizingVertical = 'HUG';
+  headline.layoutSizingHorizontal = 'FILL';
+
   return textSection;
 }
 
@@ -438,16 +593,15 @@ async function createCTASection(
   tokens: DesignTokens,
   section: ContentTokens['sections'][0]
 ): Promise<FrameNode> {
-  const cta = createAutoLayoutFrame('CTA', {
-    direction: 'VERTICAL',
-    primaryAlign: 'CENTER',
-    counterAlign: 'CENTER',
-    padding: { top: 96, right: 64, bottom: 96, left: 64 },
-    itemSpacing: 24,
-    width: 'FILL',
-    height: 'HUG',
-    fills: [createSolidPaint(tokens.colors.primary[500])],
-  });
+  const cta = createAutoFrame('CTA');
+  cta.primaryAxisAlignItems = 'CENTER';
+  cta.counterAxisAlignItems = 'CENTER';
+  cta.paddingTop = 96;
+  cta.paddingRight = 64;
+  cta.paddingBottom = 96;
+  cta.paddingLeft = 64;
+  cta.itemSpacing = 24;
+  cta.fills = [createSolidPaint(tokens.colors.primary[500])];
 
   const headline = await createText(section.headline, {
     fontFamily: tokens.typography.fontFamily.heading,
@@ -460,16 +614,16 @@ async function createCTASection(
   cta.appendChild(headline);
 
   if (section.cta) {
-    const btn = createAutoLayoutFrame('Button', {
-      direction: 'HORIZONTAL',
-      primaryAlign: 'CENTER',
-      counterAlign: 'CENTER',
-      padding: { top: 16, right: 32, bottom: 16, left: 32 },
-      cornerRadius: parseSize(tokens.effects.borderRadius.lg),
-      fills: [createSolidPaint(tokens.colors.background.primary)],
-      width: 'HUG',
-      height: 'HUG',
-    });
+    const btn = createAutoFrame('Button', 'HORIZONTAL');
+    btn.primaryAxisAlignItems = 'CENTER';
+    btn.counterAxisAlignItems = 'CENTER';
+    btn.paddingTop = 16;
+    btn.paddingRight = 32;
+    btn.paddingBottom = 16;
+    btn.paddingLeft = 32;
+    btn.cornerRadius = parseSize(tokens.effects.borderRadius.lg);
+    btn.fills = [createSolidPaint(tokens.colors.background.primary)];
+
     const btnText = await createText(section.cta.primary, {
       fontSize: 16,
       fontWeight: tokens.typography.fontWeight.semibold,
@@ -477,6 +631,9 @@ async function createCTASection(
     });
     btn.appendChild(btnText);
     cta.appendChild(btn);
+
+    btn.layoutSizingHorizontal = 'HUG';
+    btn.layoutSizingVertical = 'HUG';
   }
 
   return cta;
@@ -489,16 +646,15 @@ async function createFooter(
   tokens: DesignTokens,
   content: ContentTokens
 ): Promise<FrameNode> {
-  const footer = createAutoLayoutFrame('Footer', {
-    direction: 'VERTICAL',
-    primaryAlign: 'CENTER',
-    counterAlign: 'CENTER',
-    padding: { top: 48, right: 64, bottom: 48, left: 64 },
-    itemSpacing: 16,
-    width: 'FILL',
-    height: 'HUG',
-    fills: [createSolidPaint(tokens.colors.neutral[900])],
-  });
+  const footer = createAutoFrame('Footer');
+  footer.primaryAxisAlignItems = 'CENTER';
+  footer.counterAxisAlignItems = 'CENTER';
+  footer.paddingTop = 48;
+  footer.paddingRight = 64;
+  footer.paddingBottom = 48;
+  footer.paddingLeft = 64;
+  footer.itemSpacing = 16;
+  footer.fills = [createSolidPaint(tokens.colors.neutral[900])];
 
   const brand = await createText(content.brand.name, {
     fontFamily: tokens.typography.fontFamily.heading,
