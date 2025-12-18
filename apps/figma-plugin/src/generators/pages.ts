@@ -22,7 +22,7 @@ export async function generatePages(
     pagesPage = figma.createPage();
     pagesPage.name = 'Pages';
   }
-  figma.currentPage = pagesPage;
+  await figma.setCurrentPageAsync(pagesPage);
 
   await generateLandingPage(tokens, content, projectName);
 

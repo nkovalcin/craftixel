@@ -23,7 +23,7 @@ export async function generateOrganisms(
     organismsPage = figma.createPage();
     organismsPage.name = 'Components/Organisms';
   }
-  figma.currentPage = organismsPage;
+  await figma.setCurrentPageAsync(organismsPage);
 
   await generateHeaderComponent(tokens, content);
   await generateFooterComponent(tokens, content);

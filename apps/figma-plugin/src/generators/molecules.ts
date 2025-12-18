@@ -20,7 +20,7 @@ export async function generateMolecules(tokens: DesignTokens): Promise<void> {
     moleculesPage = figma.createPage();
     moleculesPage.name = 'Components/Molecules';
   }
-  figma.currentPage = moleculesPage;
+  await figma.setCurrentPageAsync(moleculesPage);
 
   await generateCardComponent(tokens);
   await generateFormFieldComponent(tokens);

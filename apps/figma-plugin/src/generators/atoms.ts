@@ -18,7 +18,7 @@ export async function generateAtoms(tokens: DesignTokens): Promise<void> {
     atomsPage = figma.createPage();
     atomsPage.name = 'Components/Atoms';
   }
-  figma.currentPage = atomsPage;
+  await figma.setCurrentPageAsync(atomsPage);
 
   // Generate components
   await generateButtonComponents(tokens);
