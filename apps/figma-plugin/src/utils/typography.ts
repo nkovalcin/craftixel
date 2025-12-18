@@ -72,16 +72,30 @@ export function parseLetterSpacing(spacing: string, fontSize: number): number {
 }
 
 /**
- * Load font before using
+ * Load font before using - returns the actual loaded font
  */
-export async function loadFont(family: string, style: string): Promise<void> {
+export async function loadFont(family: string, style: string): Promise<{ family: string; style: string }> {
   const fontName = getFigmaFontName(family);
+
+  // Try to load the requested font
   try {
     await figma.loadFontAsync({ family: fontName, style });
+    return { family: fontName, style };
   } catch {
-    // Fallback to Inter Regular
-    await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
+    // Font not available, try fallbacks
   }
+
+  // Try Inter with the same style
+  try {
+    await figma.loadFontAsync({ family: 'Inter', style });
+    return { family: 'Inter', style };
+  } catch {
+    // Style not available in Inter
+  }
+
+  // Final fallback: Inter Regular (always available)
+  await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
+  return { family: 'Inter', style: 'Regular' };
 }
 
 /**
@@ -109,13 +123,13 @@ export async function createText(
     textAlign = 'LEFT',
   } = options;
 
-  const fontName = getFigmaFontName(fontFamily);
   const fontStyle = getFontStyle(fontWeight);
 
-  await loadFont(fontFamily, fontStyle);
+  // Load font and get the actually loaded font info
+  const loadedFont = await loadFont(fontFamily, fontStyle);
 
   const text = figma.createText();
-  text.fontName = { family: fontName, style: fontStyle };
+  text.fontName = loadedFont;
   text.characters = content;
   text.fontSize = fontSize;
 
