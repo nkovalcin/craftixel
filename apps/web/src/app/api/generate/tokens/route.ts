@@ -48,6 +48,11 @@ function generateColorScale(baseColor: string): ColorScale {
   }
 
   const hslToHex = (h: number, s: number, l: number): string => {
+    // Clamp values to valid ranges
+    const clampedH = Math.max(0, Math.min(1, h));
+    const clampedS = Math.max(0, Math.min(1, s));
+    const clampedL = Math.max(0, Math.min(1, l));
+
     const hue2rgb = (p: number, q: number, t: number) => {
       if (t < 0) t += 1;
       if (t > 1) t -= 1;
@@ -58,20 +63,20 @@ function generateColorScale(baseColor: string): ColorScale {
     };
 
     let rOut, gOut, bOut;
-    if (s === 0) {
-      rOut = gOut = bOut = l;
+    if (clampedS === 0) {
+      rOut = gOut = bOut = clampedL;
     } else {
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      rOut = hue2rgb(p, q, h + 1 / 3);
-      gOut = hue2rgb(p, q, h);
-      bOut = hue2rgb(p, q, h - 1 / 3);
+      const q = clampedL < 0.5 ? clampedL * (1 + clampedS) : clampedL + clampedS - clampedL * clampedS;
+      const p = 2 * clampedL - q;
+      rOut = hue2rgb(p, q, clampedH + 1 / 3);
+      gOut = hue2rgb(p, q, clampedH);
+      bOut = hue2rgb(p, q, clampedH - 1 / 3);
     }
 
-    const toHex = (x: number) =>
-      Math.round(x * 255)
-        .toString(16)
-        .padStart(2, '0');
+    const toHex = (x: number) => {
+      const clamped = Math.max(0, Math.min(255, Math.round(x * 255)));
+      return clamped.toString(16).padStart(2, '0');
+    };
     return `#${toHex(rOut)}${toHex(gOut)}${toHex(bOut)}`.toUpperCase();
   };
 
@@ -254,6 +259,10 @@ function getHue(hex: string): number {
 }
 
 function hueToHex(h: number, s: number, l: number): string {
+  // Clamp values to valid ranges
+  const clampedS = Math.max(0, Math.min(1, s));
+  const clampedL = Math.max(0, Math.min(1, l));
+
   const hue2rgb = (p: number, q: number, t: number) => {
     if (t < 0) t += 1;
     if (t > 1) t -= 1;
@@ -263,18 +272,18 @@ function hueToHex(h: number, s: number, l: number): string {
     return p;
   };
 
-  const hNorm = h / 360;
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
+  const hNorm = (h % 360) / 360;
+  const q = clampedL < 0.5 ? clampedL * (1 + clampedS) : clampedL + clampedS - clampedL * clampedS;
+  const p = 2 * clampedL - q;
 
   const r = hue2rgb(p, q, hNorm + 1 / 3);
   const g = hue2rgb(p, q, hNorm);
   const b = hue2rgb(p, q, hNorm - 1 / 3);
 
-  const toHex = (x: number) =>
-    Math.round(x * 255)
-      .toString(16)
-      .padStart(2, '0');
+  const toHex = (x: number) => {
+    const clamped = Math.max(0, Math.min(255, Math.round(x * 255)));
+    return clamped.toString(16).padStart(2, '0');
+  };
 
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
 }

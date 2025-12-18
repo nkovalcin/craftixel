@@ -6,14 +6,29 @@
  * Convert hex color to RGB object (0-1 range for Figma)
  */
 export function hexToRgb(hex: string): RGB {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) {
+  // Handle invalid or empty hex values
+  if (!hex || typeof hex !== 'string') {
     return { r: 0, g: 0, b: 0 };
   }
+
+  // Clean up the hex string
+  let cleanHex = hex.trim().replace('#', '');
+
+  // Handle shorthand hex (e.g., #FFF -> #FFFFFF)
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split('').map(c => c + c).join('');
+  }
+
+  // Validate hex format - only allow valid hex characters
+  if (!/^[a-f\d]{6}$/i.test(cleanHex)) {
+    console.warn(`Invalid hex color: ${hex}, using fallback`);
+    return { r: 0.5, g: 0.5, b: 0.5 }; // Gray fallback
+  }
+
   return {
-    r: parseInt(result[1], 16) / 255,
-    g: parseInt(result[2], 16) / 255,
-    b: parseInt(result[3], 16) / 255,
+    r: parseInt(cleanHex.slice(0, 2), 16) / 255,
+    g: parseInt(cleanHex.slice(2, 4), 16) / 255,
+    b: parseInt(cleanHex.slice(4, 6), 16) / 255,
   };
 }
 
