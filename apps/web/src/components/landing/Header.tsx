@@ -39,12 +39,16 @@ export function Header() {
 
         {/* CTA */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" className="hidden md:inline-flex">
-            Log in
-          </Button>
-          <Button size="sm">
-            Get Started
-          </Button>
+          <Link href="/app">
+            <Button variant="ghost" size="sm" className="hidden md:inline-flex">
+              Log in
+            </Button>
+          </Link>
+          <Link href="/app">
+            <Button size="sm">
+              Get Started
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
