@@ -1,0 +1,16 @@
+{
+  "name": "@craftixel/figma-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "esbuild src/code.ts --bundle --outfile=code.js --target=es2017 --watch",
+    "build": "esbuild src/code.ts --bundle --outfile=code.js --target=es2017 --minify",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf code.js node_modules"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.103.0",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2"
+  }
+}

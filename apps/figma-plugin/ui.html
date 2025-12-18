@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Craftixel Generator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --bg-tertiary: #f3f4f6;
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #9ca3af;
+      --border-light: #e5e7eb;
+      --border-medium: #d1d5db;
+      --primary-500: #3b82f6;
+      --primary-600: #2563eb;
+      --primary-50: #eff6ff;
+      --success: #10b981;
+      --error: #ef4444;
+      --radius: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      line-height: 1.5;
+    }
+
+    .container {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .header-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--primary-500);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .header-text h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .header-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Sections */
+    .section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    /* Import Section */
+    .import-area {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 12px;
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      resize: none;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary-500);
+      box-shadow: 0 0 0 3px var(--primary-50);
+    }
+
+    textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--primary-500);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-600);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-medium);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-light);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    /* Checkboxes */
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+
+    .checkbox-item:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary-500);
+    }
+
+    .checkbox-item label {
+      flex: 1;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    /* Status */
+    .status {
+      padding: 12px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      display: none;
+    }
+
+    .status.success {
+      display: block;
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+
+    .status.error {
+      display: block;
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+
+    .status.info {
+      display: block;
+      background: var(--primary-50);
+      color: var(--primary-600);
+      border: 1px solid #93c5fd;
+    }
+
+    /* Progress */
+    .progress-container {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .progress-container.active {
+      display: flex;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: var(--bg-tertiary);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary-500);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* Project Info */
+    .project-info {
+      display: none;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+    }
+
+    .project-info.active {
+      display: block;
+    }
+
+    .project-info strong {
+      color: var(--text-primary);
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .quick-actions .btn {
+      flex: 1;
+      font-size: 11px;
+      padding: 8px 12px;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .footer a {
+      color: var(--primary-500);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-icon">C</div>
+      <div class="header-text">
+        <h1>Craftixel Generator</h1>
+        <p>Design system from JSON</p>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div id="status" class="status"></div>
+
+    <!-- Project Info -->
+    <div id="projectInfo" class="project-info">
+      <strong>Project:</strong> <span id="projectName">-</span>
+    </div>
+
+    <!-- Progress -->
+    <div id="progress" class="progress-container">
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+      <div id="progressText" class="progress-text">Generating...</div>
+    </div>
+
+    <!-- Import Section -->
+    <div class="section">
+      <div class="section-title">Import Project</div>
+      <div class="import-area">
+        <textarea
+          id="jsonInput"
+          placeholder="Paste your Craftixel project JSON here..."
+        ></textarea>
+        <button id="importBtn" class="btn btn-secondary btn-full">
+          Import JSON
+        </button>
+      </div>
+    </div>
+
+    <!-- Generate Options -->
+    <div class="section">
+      <div class="section-title">Generate Options</div>
+      <div class="checkbox-group">
+        <div class="checkbox-item">
+          <input type="checkbox" id="optVariables" checked>
+          <label for="optVariables">Variables (Design Tokens)</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="optComponents" checked>
+          <label for="optComponents">Components</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="optPages" checked>
+          <label for="optPages">Pages</label>
+        </div>
+      </div>
+      <button id="generateBtn" class="btn btn-primary btn-full" disabled>
+        Generate Design System
+      </button>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section">
+      <div class="section-title">Quick Actions</div>
+      <div class="quick-actions">
+        <button id="genVariablesBtn" class="btn btn-secondary" disabled>
+          Variables Only
+        </button>
+        <button id="genComponentsBtn" class="btn btn-secondary" disabled>
+          Components Only
+        </button>
+        <button id="genPagesBtn" class="btn btn-secondary" disabled>
+          Pages Only
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Made with intention by <a href="https://craftixel.io" target="_blank">Craftixel</a>
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const jsonInput = document.getElementById('jsonInput');
+    const importBtn = document.getElementById('importBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const genVariablesBtn = document.getElementById('genVariablesBtn');
+    const genComponentsBtn = document.getElementById('genComponentsBtn');
+    const genPagesBtn = document.getElementById('genPagesBtn');
+    const status = document.getElementById('status');
+    const projectInfo = document.getElementById('projectInfo');
+    const projectName = document.getElementById('projectName');
+    const progress = document.getElementById('progress');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+
+    const optVariables = document.getElementById('optVariables');
+    const optComponents = document.getElementById('optComponents');
+    const optPages = document.getElementById('optPages');
+
+    let isProjectLoaded = false;
+
+    // Show status message
+    function showStatus(message, type = 'info') {
+      status.textContent = message;
+      status.className = `status ${type}`;
+    }
+
+    // Hide status
+    function hideStatus() {
+      status.className = 'status';
+    }
+
+    // Update progress
+    function updateProgress(percent, text) {
+      progress.classList.add('active');
+      progressFill.style.width = `${percent}%`;
+      progressText.textContent = text;
+    }
+
+    // Hide progress
+    function hideProgress() {
+      progress.classList.remove('active');
+    }
+
+    // Enable/disable generate buttons
+    function setButtonsEnabled(enabled) {
+      generateBtn.disabled = !enabled;
+      genVariablesBtn.disabled = !enabled;
+      genComponentsBtn.disabled = !enabled;
+      genPagesBtn.disabled = !enabled;
+    }
+
+    // Import button click
+    importBtn.addEventListener('click', () => {
+      const json = jsonInput.value.trim();
+      if (!json) {
+        showStatus('Please paste JSON first', 'error');
+        return;
+      }
+      parent.postMessage({ pluginMessage: { type: 'import-json', data: json } }, '*');
+    });
+
+    // Generate button click
+    generateBtn.addEventListener('click', () => {
+      hideStatus();
+      parent.postMessage({ pluginMessage: { type: 'generate-all' } }, '*');
+    });
+
+    // Quick action buttons
+    genVariablesBtn.addEventListener('click', () => {
+      hideStatus();
+      parent.postMessage({ pluginMessage: { type: 'generate-variables' } }, '*');
+    });
+
+    genComponentsBtn.addEventListener('click', () => {
+      hideStatus();
+      parent.postMessage({ pluginMessage: { type: 'generate-components' } }, '*');
+    });
+
+    genPagesBtn.addEventListener('click', () => {
+      hideStatus();
+      parent.postMessage({ pluginMessage: { type: 'generate-pages' } }, '*');
+    });
+
+    // Listen for messages from plugin
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      switch (msg.type) {
+        case 'import-success':
+          showStatus('Project imported successfully!', 'success');
+          projectName.textContent = msg.projectName;
+          projectInfo.classList.add('active');
+          isProjectLoaded = true;
+          setButtonsEnabled(true);
+          break;
+
+        case 'error':
+          showStatus(msg.message, 'error');
+          hideProgress();
+          break;
+
+        case 'generation-start':
+          setButtonsEnabled(false);
+          updateProgress(0, 'Starting generation...');
+          break;
+
+        case 'progress':
+          const stepNames = {
+            variables: 'Creating variables...',
+            atoms: 'Creating atom components...',
+            molecules: 'Creating molecule components...',
+            organisms: 'Creating organism components...',
+            pages: 'Creating pages...',
+            complete: 'Complete!'
+          };
+          updateProgress(msg.progress, stepNames[msg.step] || 'Processing...');
+          break;
+
+        case 'generation-complete':
+          hideProgress();
+          showStatus('Design system generated successfully!', 'success');
+          setButtonsEnabled(true);
+          break;
+      }
+    };
+  </script>
+</body>
+</html>
