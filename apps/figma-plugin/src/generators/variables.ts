@@ -41,6 +41,18 @@ async function getOrCreateCollection(name: string): Promise<VariableCollection> 
 }
 
 /**
+ * Sanitize variable name for Figma
+ * Figma variable names can only contain letters, numbers, underscores, hyphens, and slashes
+ */
+function sanitizeVariableName(name: string): string {
+  return name
+    .replace(/\./g, '-') // Replace dots with hyphens (e.g., "0.5" -> "0-5")
+    .replace(/[^a-zA-Z0-9_\-/]/g, '-') // Replace other invalid chars with hyphens
+    .replace(/-+/g, '-') // Collapse multiple hyphens
+    .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+}
+
+/**
  * Get or create variable
  */
 async function getOrCreateVariable(
@@ -48,14 +60,16 @@ async function getOrCreateVariable(
   name: string,
   type: VariableResolvedDataType
 ): Promise<Variable> {
+  const sanitizedName = sanitizeVariableName(name);
+
   for (const id of collection.variableIds) {
     const variable = await figma.variables.getVariableByIdAsync(id);
-    if (variable?.name === name) {
+    if (variable?.name === sanitizedName) {
       return variable;
     }
   }
 
-  return figma.variables.createVariable(name, collection, type);
+  return figma.variables.createVariable(sanitizedName, collection, type);
 }
 
 /**
