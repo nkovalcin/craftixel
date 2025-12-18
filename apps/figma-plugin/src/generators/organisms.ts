@@ -6,7 +6,7 @@
 import type { DesignTokens, ContentTokens } from '../types';
 import { createSolidPaint } from '../utils/colors';
 import { createText, parseSize } from '../utils/typography';
-import { createComponent, createAutoLayoutFrame } from '../utils/layout';
+import { createComponent, createAutoLayoutFrame, appendWithLayout } from '../utils/layout';
 
 /**
  * Generate all organism components
@@ -234,7 +234,6 @@ async function generateHeroSection(
     textAlign: 'CENTER',
   });
   headline.textAutoResize = 'WIDTH_AND_HEIGHT';
-  headline.layoutSizingHorizontal = 'FILL';
 
   // Subheadline
   if (heroContent.subheadline) {
@@ -247,8 +246,7 @@ async function generateHeroSection(
       textAlign: 'CENTER',
     });
     subheadline.textAutoResize = 'WIDTH_AND_HEIGHT';
-    subheadline.layoutSizingHorizontal = 'FILL';
-    contentContainer.appendChild(subheadline);
+    appendWithLayout(contentContainer, subheadline, { horizontal: 'FILL' });
   }
 
   // CTA buttons
@@ -307,8 +305,9 @@ async function generateHeroSection(
     contentContainer.appendChild(ctaContainer);
   }
 
-  // Insert headline at the beginning
+  // Insert headline at the beginning and set layout
   contentContainer.insertChild(0, headline);
+  headline.layoutSizingHorizontal = 'FILL';
 
   hero.appendChild(contentContainer);
   hero.x = 0;
@@ -354,7 +353,6 @@ async function generateFeaturesSection(
     textAlign: 'CENTER',
   });
   headline.textAutoResize = 'WIDTH_AND_HEIGHT';
-  headline.layoutSizingHorizontal = 'FILL';
 
   if (featuresContent.subheadline) {
     const subheadline = await createText(featuresContent.subheadline, {
@@ -364,11 +362,11 @@ async function generateFeaturesSection(
       textAlign: 'CENTER',
     });
     subheadline.textAutoResize = 'WIDTH_AND_HEIGHT';
-    subheadline.layoutSizingHorizontal = 'FILL';
-    header.appendChild(subheadline);
+    appendWithLayout(header, subheadline, { horizontal: 'FILL' });
   }
 
   header.insertChild(0, headline);
+  headline.layoutSizingHorizontal = 'FILL';
 
   // Features grid
   const grid = createAutoLayoutFrame('Grid', {
@@ -413,8 +411,6 @@ async function generateFeaturesSection(
       fontWeight: tokens.typography.fontWeight.semibold,
       color: tokens.colors.text.primary,
     });
-    title.layoutSizingHorizontal = 'FILL';
-
     // Description
     const description = await createText(item.description, {
       fontFamily: tokens.typography.fontFamily.body,
@@ -422,11 +418,10 @@ async function generateFeaturesSection(
       color: tokens.colors.text.secondary,
       lineHeight: tokens.typography.fontSize.base.lineHeight,
     });
-    description.layoutSizingHorizontal = 'FILL';
 
     featureCard.appendChild(iconFrame);
-    featureCard.appendChild(title);
-    featureCard.appendChild(description);
+    appendWithLayout(featureCard, title, { horizontal: 'FILL' });
+    appendWithLayout(featureCard, description, { horizontal: 'FILL' });
     grid.appendChild(featureCard);
   }
 

@@ -6,7 +6,7 @@
 import type { DesignTokens } from '../types';
 import { createSolidPaint } from '../utils/colors';
 import { createText, parseSize } from '../utils/typography';
-import { createComponent, createAutoLayoutFrame, parseShadows } from '../utils/layout';
+import { createComponent, createAutoLayoutFrame, parseShadows, appendWithLayout } from '../utils/layout';
 
 /**
  * Generate all molecule components
@@ -54,8 +54,6 @@ async function generateCardComponent(tokens: DesignTokens): Promise<void> {
     fontWeight: tokens.typography.fontWeight.semibold,
     color: tokens.colors.text.primary,
   });
-  title.layoutSizingHorizontal = 'FILL';
-
   // Card description
   const description = await createText(
     'This is a card description. It can contain multiple lines of text to explain the content.',
@@ -67,10 +65,9 @@ async function generateCardComponent(tokens: DesignTokens): Promise<void> {
       lineHeight: tokens.typography.fontSize.base.lineHeight,
     }
   );
-  description.layoutSizingHorizontal = 'FILL';
 
-  card.appendChild(title);
-  card.appendChild(description);
+  appendWithLayout(card, title, { horizontal: 'FILL' });
+  appendWithLayout(card, description, { horizontal: 'FILL' });
 
   card.x = 0;
   card.y = 0;
@@ -114,8 +111,7 @@ async function generateFormFieldComponent(tokens: DesignTokens): Promise<void> {
     fontSize: parseSize(tokens.typography.fontSize.base.size),
     color: tokens.colors.text.muted,
   });
-  placeholder.layoutSizingHorizontal = 'FILL';
-  input.appendChild(placeholder);
+  appendWithLayout(input, placeholder, { horizontal: 'FILL' });
 
   // Helper text
   const helper = await createText('Helper text goes here', {
@@ -208,8 +204,6 @@ async function generateFeatureItemComponent(tokens: DesignTokens): Promise<void>
     fontWeight: tokens.typography.fontWeight.semibold,
     color: tokens.colors.text.primary,
   });
-  title.layoutSizingHorizontal = 'FILL';
-
   // Description
   const description = await createText(
     'Brief description of this feature and how it benefits the user.',
@@ -220,11 +214,10 @@ async function generateFeatureItemComponent(tokens: DesignTokens): Promise<void>
       lineHeight: tokens.typography.fontSize.base.lineHeight,
     }
   );
-  description.layoutSizingHorizontal = 'FILL';
 
   featureItem.appendChild(iconFrame);
-  featureItem.appendChild(title);
-  featureItem.appendChild(description);
+  appendWithLayout(featureItem, title, { horizontal: 'FILL' });
+  appendWithLayout(featureItem, description, { horizontal: 'FILL' });
 
   featureItem.x = 0;
   featureItem.y = 300;

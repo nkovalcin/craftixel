@@ -223,3 +223,25 @@ export function parseShadows(shadowString: string): Effect[] {
 
   return effects;
 }
+
+/**
+ * Append child to parent and set layout sizing
+ * This must be done after appendChild because layoutSizing only works on children of auto-layout frames
+ */
+export function appendWithLayout(
+  parent: FrameNode | ComponentNode,
+  child: SceneNode,
+  sizing?: { horizontal?: 'HUG' | 'FILL' | 'FIXED'; vertical?: 'HUG' | 'FILL' | 'FIXED' }
+): void {
+  parent.appendChild(child);
+
+  // Only set layout sizing if parent has auto-layout and child supports it
+  if (parent.layoutMode !== 'NONE' && 'layoutSizingHorizontal' in child) {
+    if (sizing?.horizontal) {
+      (child as FrameNode | TextNode).layoutSizingHorizontal = sizing.horizontal;
+    }
+    if (sizing?.vertical) {
+      (child as FrameNode | TextNode).layoutSizingVertical = sizing.vertical;
+    }
+  }
+}

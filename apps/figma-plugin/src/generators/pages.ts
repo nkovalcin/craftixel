@@ -6,7 +6,7 @@
 import type { DesignTokens, ContentTokens } from '../types';
 import { createSolidPaint } from '../utils/colors';
 import { createText, parseSize } from '../utils/typography';
-import { createAutoLayoutFrame } from '../utils/layout';
+import { createAutoLayoutFrame, appendWithLayout } from '../utils/layout';
 
 /**
  * Generate complete pages
@@ -192,9 +192,8 @@ async function createHeroSection(
     lineHeight: tokens.typography.fontSize['5xl'].lineHeight,
   });
   headline.textAutoResize = 'WIDTH_AND_HEIGHT';
-  headline.layoutSizingHorizontal = 'FILL';
 
-  content.appendChild(headline);
+  appendWithLayout(content, headline, { horizontal: 'FILL' });
 
   // Subheadline
   if (section.subheadline) {
@@ -206,8 +205,7 @@ async function createHeroSection(
       lineHeight: tokens.typography.fontSize.xl.lineHeight,
     });
     subheadline.textAutoResize = 'WIDTH_AND_HEIGHT';
-    subheadline.layoutSizingHorizontal = 'FILL';
-    content.appendChild(subheadline);
+    appendWithLayout(content, subheadline, { horizontal: 'FILL' });
   }
 
   // CTAs
@@ -302,8 +300,7 @@ async function createFeaturesSection(
     textAlign: 'CENTER',
   });
   headline.textAutoResize = 'WIDTH_AND_HEIGHT';
-  headline.layoutSizingHorizontal = 'FILL';
-  header.appendChild(headline);
+  appendWithLayout(header, headline, { horizontal: 'FILL' });
 
   if (section.subheadline) {
     const subheadline = await createText(section.subheadline, {
@@ -313,8 +310,7 @@ async function createFeaturesSection(
       textAlign: 'CENTER',
     });
     subheadline.textAutoResize = 'WIDTH_AND_HEIGHT';
-    subheadline.layoutSizingHorizontal = 'FILL';
-    header.appendChild(subheadline);
+    appendWithLayout(header, subheadline, { horizontal: 'FILL' });
   }
 
   features.appendChild(header);
@@ -362,7 +358,6 @@ async function createFeaturesSection(
         fontWeight: tokens.typography.fontWeight.semibold,
         color: tokens.colors.text.primary,
       });
-      title.layoutSizingHorizontal = 'FILL';
 
       const desc = await createText(item.description, {
         fontFamily: tokens.typography.fontFamily.body,
@@ -370,11 +365,10 @@ async function createFeaturesSection(
         color: tokens.colors.text.secondary,
         lineHeight: 1.6,
       });
-      desc.layoutSizingHorizontal = 'FILL';
 
       card.appendChild(icon);
-      card.appendChild(title);
-      card.appendChild(desc);
+      appendWithLayout(card, title, { horizontal: 'FILL' });
+      appendWithLayout(card, desc, { horizontal: 'FILL' });
       grid.appendChild(card);
     }
 
@@ -418,9 +412,8 @@ async function createTextSection(
     textAlign: 'CENTER',
   });
   headline.textAutoResize = 'WIDTH_AND_HEIGHT';
-  headline.layoutSizingHorizontal = 'FILL';
 
-  content.appendChild(headline);
+  appendWithLayout(content, headline, { horizontal: 'FILL' });
 
   if (section.body) {
     const body = await createText(section.body, {
@@ -431,8 +424,7 @@ async function createTextSection(
       lineHeight: 1.7,
     });
     body.textAutoResize = 'WIDTH_AND_HEIGHT';
-    body.layoutSizingHorizontal = 'FILL';
-    content.appendChild(body);
+    appendWithLayout(content, body, { horizontal: 'FILL' });
   }
 
   textSection.appendChild(content);

@@ -6,7 +6,7 @@
 import type { DesignTokens } from '../types';
 import { createSolidPaint } from '../utils/colors';
 import { createText, parseSize } from '../utils/typography';
-import { createComponent, parseShadows } from '../utils/layout';
+import { createComponent, parseShadows, appendWithLayout } from '../utils/layout';
 
 /**
  * Generate all atom components
@@ -135,8 +135,7 @@ async function generateInputComponents(tokens: DesignTokens): Promise<void> {
       color: state === 'disabled' ? tokens.colors.text.muted : tokens.colors.text.secondary,
     });
 
-    placeholder.layoutSizingHorizontal = 'FILL';
-    input.appendChild(placeholder);
+    appendWithLayout(input, placeholder, { horizontal: 'FILL' });
 
     if (state === 'disabled') {
       input.opacity = 0.5;
