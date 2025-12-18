@@ -77,11 +77,36 @@ figma.ui.onmessage = async (msg: { type: string; data?: unknown }) => {
 
 async function handleImport(jsonString: string): Promise<void> {
   try {
-    const data = JSON.parse(jsonString) as FigmaExport;
+    const rawData = JSON.parse(jsonString);
 
-    // Validate structure
-    if (!data.version || !data.project || !data.content || !data.tokens) {
-      throw new Error('Invalid project format. Missing required fields.');
+    // Support both old format (version, project, content, tokens)
+    // and new webapp format (tokens, content, strategy)
+    let data: FigmaExport;
+
+    if (rawData.version && rawData.project) {
+      // Old format - use as-is
+      data = rawData as FigmaExport;
+    } else if (rawData.tokens && rawData.content) {
+      // New webapp format - transform to expected format
+      const projectName = rawData.content?.brand?.name || rawData.strategy?.businessName || 'Untitled Project';
+
+      data = {
+        version: '1.0.0',
+        project: {
+          id: `project-${Date.now()}`,
+          name: projectName,
+          createdAt: new Date().toISOString(),
+        },
+        tokens: rawData.tokens,
+        content: rawData.content,
+        generateOptions: {
+          variables: true,
+          components: true,
+          pages: true,
+        },
+      };
+    } else {
+      throw new Error('Invalid project format. Missing required fields (tokens and content).');
     }
 
     currentProject = data;

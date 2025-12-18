@@ -43,11 +43,21 @@ export default function GeneratePage() {
     } else if (selectedFormat === 'css') {
       setGeneratedCode(generateCSSVariables(project.tokens));
     } else {
-      // Figma export
+      // Figma export - transform to plugin format
       const figmaPayload = {
-        tokens: project.tokens,
-        content: project.content,
-        strategy: project.strategyInput,
+        version: '1.0.0',
+        project: {
+          id: project.id,
+          name: project.content?.brand?.name || project.strategyInput?.businessName || project.name,
+          createdAt: project.createdAt,
+        },
+        tokens: transformTokensForFigma(project.tokens),
+        content: transformContentForFigma(project.content, project.strategyInput),
+        generateOptions: {
+          variables: true,
+          components: true,
+          pages: true,
+        },
       };
       setGeneratedCode(JSON.stringify(figmaPayload, null, 2));
     }
@@ -374,4 +384,261 @@ function generateCSSVariables(tokens: ReturnType<typeof useProjectStore.getState
   lines.push('}');
 
   return lines.join('\n');
+}
+
+// Transform web app tokens to Figma plugin format
+function transformTokensForFigma(tokens: ReturnType<typeof useProjectStore.getState>['projects'][0]['tokens']) {
+  if (!tokens) return null;
+
+  return {
+    colors: {
+      primary: tokens.colors.primary,
+      secondary: tokens.colors.secondary,
+      accent: tokens.colors.accent,
+      semantic: {
+        success: tokens.colors.success,
+        warning: tokens.colors.warning,
+        error: tokens.colors.error,
+        info: tokens.colors.info,
+      },
+      neutral: {
+        0: '#FFFFFF',
+        50: tokens.colors.neutral[50],
+        100: tokens.colors.neutral[100],
+        200: tokens.colors.neutral[200],
+        300: tokens.colors.neutral[300],
+        400: tokens.colors.neutral[400],
+        500: tokens.colors.neutral[500],
+        600: tokens.colors.neutral[600],
+        700: tokens.colors.neutral[700],
+        800: tokens.colors.neutral[800],
+        900: tokens.colors.neutral[900],
+        1000: '#000000',
+      },
+      background: {
+        primary: tokens.colors.background,
+        secondary: tokens.colors.muted,
+        tertiary: tokens.colors.muted,
+        inverse: tokens.colors.foreground,
+      },
+      text: {
+        primary: tokens.colors.foreground,
+        secondary: tokens.colors.mutedForeground,
+        muted: tokens.colors.mutedForeground,
+        inverse: tokens.colors.background,
+      },
+      border: {
+        light: tokens.colors.border,
+        medium: tokens.colors.border,
+        strong: tokens.colors.foreground,
+      },
+    },
+    typography: {
+      fontFamily: {
+        heading: tokens.typography.fontFamily.sans,
+        body: tokens.typography.fontFamily.sans,
+        mono: tokens.typography.fontFamily.mono,
+      },
+      fontSize: {
+        xs: { size: tokens.typography.fontSize.xs, lineHeight: 1.5, letterSpacing: '0' },
+        sm: { size: tokens.typography.fontSize.sm, lineHeight: 1.5, letterSpacing: '0' },
+        base: { size: tokens.typography.fontSize.base, lineHeight: 1.5, letterSpacing: '0' },
+        lg: { size: tokens.typography.fontSize.lg, lineHeight: 1.5, letterSpacing: '0' },
+        xl: { size: tokens.typography.fontSize.xl, lineHeight: 1.4, letterSpacing: '-0.01em' },
+        '2xl': { size: tokens.typography.fontSize['2xl'], lineHeight: 1.3, letterSpacing: '-0.02em' },
+        '3xl': { size: tokens.typography.fontSize['3xl'], lineHeight: 1.2, letterSpacing: '-0.02em' },
+        '4xl': { size: tokens.typography.fontSize['4xl'], lineHeight: 1.1, letterSpacing: '-0.02em' },
+        '5xl': { size: tokens.typography.fontSize['5xl'], lineHeight: 1.1, letterSpacing: '-0.02em' },
+        '6xl': { size: tokens.typography.fontSize['6xl'], lineHeight: 1, letterSpacing: '-0.02em' },
+      },
+      fontWeight: tokens.typography.fontWeight,
+      lineHeight: tokens.typography.lineHeight,
+      letterSpacing: {
+        tight: '-0.02em',
+        normal: '0',
+        wide: '0.02em',
+      },
+    },
+    spacing: {
+      baseUnit: tokens.spacing.base,
+      scale: {
+        0: '0',
+        px: '1px',
+        0.5: '2px',
+        1: '4px',
+        1.5: '6px',
+        2: '8px',
+        2.5: '10px',
+        3: '12px',
+        3.5: '14px',
+        4: '16px',
+        5: '20px',
+        6: '24px',
+        7: '28px',
+        8: '32px',
+        9: '36px',
+        10: '40px',
+        11: '44px',
+        12: '48px',
+        14: '56px',
+        16: '64px',
+        20: '80px',
+        24: '96px',
+        28: '112px',
+        32: '128px',
+      },
+      section: {
+        paddingY: '96px',
+        paddingX: '24px',
+        gap: '64px',
+      },
+      component: {
+        paddingSmall: '8px',
+        paddingMedium: '16px',
+        paddingLarge: '24px',
+        gap: '12px',
+      },
+    },
+    effects: {
+      borderRadius: tokens.effects.borderRadius,
+      shadow: {
+        none: 'none',
+        sm: tokens.effects.shadow.sm,
+        md: tokens.effects.shadow.md,
+        lg: tokens.effects.shadow.lg,
+        xl: tokens.effects.shadow.xl,
+        '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
+        inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
+      },
+      blur: {
+        none: '0',
+        sm: '4px',
+        md: '12px',
+        lg: '16px',
+        xl: '24px',
+      },
+      transition: {
+        none: '0ms',
+        fast: '150ms',
+        normal: '300ms',
+        slow: '500ms',
+        slower: '700ms',
+      },
+    },
+    layout: {
+      container: tokens.layout.container,
+      breakpoints: tokens.layout.breakpoints,
+      grid: {
+        columns: 12,
+        gutter: '24px',
+        margin: '24px',
+      },
+      zIndex: {
+        base: 0,
+        dropdown: 1000,
+        sticky: 1100,
+        fixed: 1200,
+        modal: 1300,
+        popover: 1400,
+        tooltip: 1500,
+      },
+    },
+  };
+}
+
+// Transform web app content to Figma plugin format
+function transformContentForFigma(
+  content: ReturnType<typeof useProjectStore.getState>['projects'][0]['content'],
+  strategy: ReturnType<typeof useProjectStore.getState>['projects'][0]['strategyInput']
+) {
+  if (!content) return null;
+
+  const tone = strategy?.tone?.toLowerCase().includes('professional') ? 'professional' :
+               strategy?.tone?.toLowerCase().includes('friendly') ? 'friendly' :
+               strategy?.tone?.toLowerCase().includes('bold') ? 'bold' :
+               strategy?.tone?.toLowerCase().includes('playful') ? 'playful' : 'professional';
+
+  return {
+    brand: {
+      name: content.brand.name,
+      tagline: content.brand.tagline,
+      description: content.brand.description,
+      tone: tone,
+      personality: [tone, 'trustworthy', 'innovative'],
+      valueProposition: content.brand.description,
+      keywords: {
+        use: ['quality', 'simple', 'powerful'],
+        avoid: ['complex', 'difficult'],
+      },
+    },
+    sections: content.sections.map((section, index) => ({
+      id: section.id,
+      type: section.type === 'how-it-works' ? 'howItWorks' : section.type,
+      enabled: true,
+      order: index,
+      headline: section.headline,
+      subheadline: section.subheadline || '',
+      body: section.description || '',
+      cta: section.cta ? {
+        primary: section.cta.primary,
+        secondary: section.cta.secondary,
+      } : undefined,
+      items: section.items?.map((item, i) => ({
+        id: `${section.id}-item-${i}`,
+        title: item.title,
+        description: item.description,
+        icon: item.icon,
+      })),
+    })),
+    microcopy: {
+      nav: {
+        home: 'Home',
+        features: content.microcopy?.navigation?.[0] || 'Features',
+        pricing: content.microcopy?.navigation?.[2] || 'Pricing',
+        about: content.microcopy?.navigation?.[1] || 'About',
+        contact: content.microcopy?.navigation?.[3] || 'Contact',
+        login: 'Log in',
+        signup: 'Sign up',
+      },
+      buttons: {
+        submit: content.microcopy?.buttons?.submit || 'Submit',
+        cancel: content.microcopy?.buttons?.cancel || 'Cancel',
+        save: 'Save',
+        delete: 'Delete',
+        continue: 'Continue',
+        back: 'Back',
+        learnMore: content.microcopy?.buttons?.secondary || 'Learn More',
+        getStarted: content.microcopy?.buttons?.primary || 'Get Started',
+        tryFree: 'Try Free',
+        contactUs: 'Contact Us',
+      },
+      forms: {
+        labels: content.microcopy?.labels || {},
+        placeholders: {},
+        hints: {},
+        errors: {
+          required: 'This field is required',
+          invalidEmail: 'Please enter a valid email',
+          tooShort: 'Too short',
+          tooLong: 'Too long',
+          mismatch: 'Values do not match',
+        },
+        success: {
+          saved: 'Saved successfully',
+          sent: 'Sent successfully',
+          subscribed: 'Subscribed successfully',
+        },
+      },
+      states: {
+        loading: 'Loading...',
+        empty: 'No items found',
+        error: 'Something went wrong',
+        success: 'Success!',
+      },
+      meta: {
+        copyright: `© ${new Date().getFullYear()} ${content.brand.name}. All rights reserved.`,
+        madeWith: 'Made with Craftixel',
+      },
+    },
+  };
 }
